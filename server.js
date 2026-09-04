@@ -1,0 +1,14 @@
+require('dotenv').config();
+const express=require('express'); const cors=require('cors'); const helmet=require('helmet');
+const rateLimit=require('express-rate-limit'); const connectDB=require('./config/db');
+const authRoutes=require('./routes/authRoutes'); const adminRoutes=require('./routes/adminRoutes');
+const {notFound,errorHandler}=require('./middleware/errorHandler');
+const app=express();
+connectDB();
+app.use(helmet()); app.use(cors()); app.use(express.json({limit:'10kb'}));
+app.use(express.urlencoded({extended:false,limit:'10kb'}));
+const authLimiter=rateLimit({windowMs:15*60*1000,max:10,standardHeaders:'draft-8',legacyHeaders:false,message:{message:'Too many authentication attempts. Please try again later.'}});
+app.get('/',(req,res)=>res.json({message:'SecureAuth API is running'}));
+app.use('/api/auth',authLimiter,authRoutes); app.use('/api/admin',adminRoutes);
+app.use(notFound); app.use(errorHandler);
+const PORT=process.env.PORT||5000; app.listen(PORT,()=>console.log(`Server running on port ${PORT}`));
